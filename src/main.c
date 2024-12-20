@@ -81,7 +81,7 @@ int main()
         return -1;
     }
 
-    printf("\n\nHWND: %p\nWorkerW: %p\nProgman: %p\n", hwnd, hWorkerW, progman);
+    printf("HWND: %p\nWorkerW: %p\n", hwnd, hWorkerW);
     SetParent(hwnd, hWorkerW);
     SetWindowLongPtr(hwnd, GWL_STYLE, WS_CHILDWINDOW | WS_VISIBLE);
 
@@ -93,6 +93,7 @@ int main()
 
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
+    SetTimer(hwnd, 1, 16, NULL);
 
     HDC hdc = GetDC(hwnd);
 
@@ -125,7 +126,7 @@ int main()
         return -1;
     }
 
-    uint32_t shader = CreateShader("res/shaders/color.vert", "res/shaders/color.frag");
+    uint32_t shader = CreateShader("res/shaders/fractal.vert", "res/shaders/fractal.frag");
     uint32_t vao, vbo;
     float vertices[] =
     {
@@ -147,6 +148,8 @@ int main()
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 
+    DWORD initialTickCount = GetTickCount64();
+
     MSG msg = {0};
     while (GetMessage(&msg, NULL, 0, 0))
     {
@@ -156,7 +159,11 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        DWORD elapsedTime = GetTickCount64() - initialTickCount;
+
         glUseProgram(shader);
+        glUniform2f(glGetUniformLocation(shader, "iResolution"), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+        glUniform1f(glGetUniformLocation(shader, "iTime"), elapsedTime / 1000.0f);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         SwapBuffers(hdc);
