@@ -7,17 +7,24 @@
 void GetShaderSource(char** result, const char* filepath)
 {
     FILE* shaderFile = fopen(filepath, "rb");
-    fseek(shaderFile, 0, SEEK_END);
-    long size = ftell(shaderFile);
-    fseek(shaderFile, 0, SEEK_SET);
-    char* shaderSource = (char*)malloc(size + 1);
-    fread(shaderSource, size, 1, shaderFile);
-    shaderSource[size] = '\0';
-    fclose(shaderFile);
-
-    *result = (char*)malloc(size + 1);
-    memcpy(*result, shaderSource, size + 1);
-    free(shaderSource);
+    if (shaderFile)
+    {
+        fseek(shaderFile, 0, SEEK_END);
+        long size = ftell(shaderFile);
+        fseek(shaderFile, 0, SEEK_SET);
+        char* shaderSource = (char*)malloc(size + 1);
+        fread(shaderSource, size, 1, shaderFile);
+        shaderSource[size] = '\0';
+        fclose(shaderFile);
+        *result = (char*)malloc(size + 1);
+        memcpy(*result, shaderSource, size + 1);
+        free(shaderSource);
+    }
+    else
+    {
+        printf("Failed to open shader file! %s\n", filepath);
+        *result = NULL;
+    }
 }
 
 uint32_t CreateShader(const char* vertexFilepath, const char* fragmentFilepath)

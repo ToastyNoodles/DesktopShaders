@@ -55,7 +55,7 @@ vec4 rm (vec3 ro, vec3 rd)
 void main()
 {
     vec2 uv = (gl_FragCoord.xy - (iResolution.xy / 2.0)) / iResolution.x;
-	vec3 ro = vec3(0.0, 0.0, -50.0);
+	vec3 ro = vec3(0.0, 0.0, -100.0);
     ro.xz = rotate(ro.xz, iTime);
     vec3 cf = normalize(-ro);
     vec3 cs = normalize(cross(cf, vec3(0.0, 1.0, 0.0)));

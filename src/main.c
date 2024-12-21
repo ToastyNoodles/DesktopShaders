@@ -5,6 +5,8 @@
 #include <gl/GL.h>
 #include "shader.h"
 
+#define WS_EX_NOREDIRECTIONBITMAP 0x00200000L
+
 HWND hWorkerW = NULL;
 HWND hShellView = NULL;
 
@@ -45,8 +47,20 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
-int main()
+char* fragmentPath = NULL;
+
+int main(int argc, char* argv[])
 {
+    if (argv[1] != NULL)
+    {
+        fragmentPath = argv[1];
+        printf("Provided Path: %s\n", argv[1]);
+    }
+    else
+    {
+        fragmentPath = "res/shaders/color.frag";
+    }
+
     HWND progman = FindWindow("Progman", NULL);
     if (!progman)
     {
@@ -63,10 +77,11 @@ int main()
     }  
 
     WNDCLASS windowClass = {0};
-    windowClass.style = CS_HREDRAW | CS_VREDRAW;
+    windowClass.style = CS_PARENTDC;
     windowClass.lpfnWndProc = DefWindowProc;
     windowClass.hInstance = GetModuleHandle(0);
     windowClass.lpszClassName = "DesktopShadersWindow";
+    windowClass.hbrBackground = GetSysColorBrush(COLOR_SCROLLBAR);
 
     if (!RegisterClass(&windowClass))
     {
@@ -74,14 +89,15 @@ int main()
         return -1;
     }
 
-    HWND hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT, windowClass.lpszClassName, "Desktop Shaders", WS_VISIBLE, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), 0, 0, GetModuleHandle(0), 0);
+    HWND hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_NOACTIVATE, windowClass.lpszClassName, "Desktop Shaders", WS_VISIBLE, 0, 0, GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN), 0, 0, windowClass.hInstance, 0);
     if (!hwnd)
     {
         MessageBox(NULL, "Failed to create window!", "Error", MB_OK);
         return -1;
     }
 
-    printf("HWND: %p\nWorkerW: %p\n", hwnd, hWorkerW);
+    //debug window handles
+    //printf("HWND: %p\nWorkerW: %p\n", hwnd, hWorkerW);
     SetParent(hwnd, hWorkerW);
     SetWindowLongPtr(hwnd, GWL_STYLE, WS_CHILDWINDOW | WS_VISIBLE);
 
@@ -92,8 +108,7 @@ int main()
     ReleaseDC(desktopWindow, desktopDC);
 
     ShowWindow(hwnd, SW_SHOW);
-    UpdateWindow(hwnd);
-    SetTimer(hwnd, 1, 16, NULL);
+    SetTimer(hwnd, 1, 15, NULL); //60fps
 
     HDC hdc = GetDC(hwnd);
 
@@ -126,7 +141,7 @@ int main()
         return -1;
     }
 
-    uint32_t shader = CreateShader("res/shaders/fractal.vert", "res/shaders/fractal.frag");
+    uint32_t shader = CreateShader("res/shaders/default.vert", fragmentPath);
     uint32_t vao, vbo;
     float vertices[] =
     {
@@ -162,6 +177,11 @@ int main()
         DWORD elapsedTime = GetTickCount64() - initialTickCount;
 
         glUseProgram(shader);
+        POINT cursorPos;
+        if (GetCursorPos(&cursorPos))
+        {
+            glUniform2f(glGetUniformLocation(shader, "iMouse"), cursorPos.x, cursorPos.y);
+        }
         glUniform2f(glGetUniformLocation(shader, "iResolution"), GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
         glUniform1f(glGetUniformLocation(shader, "iTime"), elapsedTime / 1000.0f);
         glDrawArrays(GL_TRIANGLES, 0, 6);
